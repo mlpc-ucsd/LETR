@@ -110,10 +110,10 @@ To reproduce our results, you need to process two datasets, [ShanghaiTech](https
 
 If you use this code for your research, please cite our paper:
 ```
-@inproceedings{lee2018winn,
+@article{xu2021line,
   title={Line Segment Detection Using Transformers without Edges},
   author={Xu, Yifan and Xu, Weijian and Cheung, David and Tu, Zhuowen},
-  booktitle={CVPR},
+  journal={arXiv preprint arXiv:2101.01909},
   year={2021}
 }
 ```
