@@ -73,7 +73,10 @@ class SetCriterion(nn.Module):
         empty_weight[-1] = self.eos_coef
         self.register_buffer('empty_weight', empty_weight)
         self.args = args
-        self.args.label_loss_params = eval(self.args.label_loss_params)  # Convert the string to dict.
+        try:
+            self.args.label_loss_params = eval(self.args.label_loss_params)  # Convert the string to dict.
+        except:
+            pass
 
     def loss_lines_labels(self, outputs, targets,  num_items,  log=False, origin_indices=None):
         """Classification loss (NLL)
@@ -351,7 +354,6 @@ def build(args):
         weight_dict['loss_line'] = args.line_loss_coef
         aux_layer = args.dec_layers
 
-    # TODO this is a hack
     if args.aux_loss:
         aux_weight_dict = {}
         for i in range(aux_layer - 1):
