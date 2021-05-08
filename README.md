@@ -14,7 +14,7 @@ In this paper, we present a joint end-to-end line segment detection algorithm us
 ## Results and Checkpoints
 
 
-| Name | sAP10 | sAP105 | sF10 | sF15 | URL|
+| Name | sAP10 | sAP15 | sF10 | sF15 | URL|
 | --- | --- | --- | --- | --- |--- |
 | Wireframe | 65.6 | 68.0 | 66.1 | 67.4 | [LETR-R101](https://vcl.ucsd.edu/letr/checkpoints/res101/res101_stage2_focal.zip) |
 | YorkUrban | 29.6 | 32.0 | 40.5 | 42.1 | [LETR-R50](https://vcl.ucsd.edu/letr/checkpoints/res50/res50_stage2_focal.zip) |
@@ -110,10 +110,10 @@ To reproduce our results, you need to process two datasets, [ShanghaiTech](https
 
 If you use this code for your research, please cite our paper:
 ```
-@inproceedings{lee2018winn,
+@article{xu2021line,
   title={Line Segment Detection Using Transformers without Edges},
   author={Xu, Yifan and Xu, Weijian and Cheung, David and Tu, Zhuowen},
-  booktitle={CVPR},
+  journal={arXiv preprint arXiv:2101.01909},
   year={2021}
 }
 ```
