@@ -9,6 +9,8 @@ In this paper, we present a joint end-to-end line segment detection algorithm us
 
 
 ## Changelog
+05/07/2021: Code for LETR Basic Usage [Demo](https://github.com/mlpc-ucsd/LETR/blob/master/src/demo_letr.ipynb) are released. 
+
 04/30/2021: Code and pre-trained checkpoint for LETR are released. 
 
 ## Results and Checkpoints
