@@ -112,11 +112,13 @@ To reproduce our results, you need to process two datasets, [ShanghaiTech](https
 
 If you use this code for your research, please cite our paper:
 ```
-@article{xu2021line,
-  title={Line Segment Detection Using Transformers without Edges},
-  author={Xu, Yifan and Xu, Weijian and Cheung, David and Tu, Zhuowen},
-  journal={arXiv preprint arXiv:2101.01909},
-  year={2021}
+@InProceedings{Xu_2021_CVPR,
+    author    = {Xu, Yifan and Xu, Weijian and Cheung, David and Tu, Zhuowen},
+    title     = {Line Segment Detection Using Transformers Without Edges},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2021},
+    pages     = {4257-4266}
 }
 ```
 ### Acknowledgments
