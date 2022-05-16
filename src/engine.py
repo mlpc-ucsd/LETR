@@ -25,6 +25,7 @@ def train_one_epoch(model, criterion, postprocessors, data_loader, optimizer, de
 
 
     counter = 0
+    batch_idx = 0
     torch.cuda.empty_cache()
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         samples = samples.to(device)
@@ -59,14 +60,18 @@ def train_one_epoch(model, criterion, postprocessors, data_loader, optimizer, de
             print(loss_dict_reduced)
             sys.exit(1)
 
-        optimizer.zero_grad()
+        losses /= args.grad_accum_batches
         losses.backward()
-        if max_norm > 0:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
-        optimizer.step()
+        
+        if (batch_idx + 1) % args.grad_accum_batches == 0:
+            if args.clip_max_norm > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_max_norm)
+            optimizer.step()
+            optimizer.zero_grad()
 
         metric_logger.update(loss=loss_value, **loss_dict_reduced_scaled, **loss_dict_reduced_unscaled)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+        batch_idx +=1
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
