@@ -1,0 +1,14 @@
+name: letr
+dependencies:
+  - numpy
+  - pytorch==1.8.0
+  - torchvision==0.9.0
+  - scipy
+  - opencv
+  - matplotlib
+  - jupyter
+  - nb_conda_kernels
+  - pip
+  - pip:
+       - docopt
+

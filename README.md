@@ -31,17 +31,11 @@ git clone https://github.com/mlpc-ucsd/LETR.git
 ### Step2: Environment Installation
 
 ```bash
-mkdir -p data
-mkdir -p evaluation/data
-mkdir -p exp
+mkdir -p data evaluation/data exp
 
-
-conda create -n letr python anaconda
-conda activate letr
-conda install -c pytorch pytorch torchvision
-conda install cython scipy
+conda env create -f environment.yml
 pip install -U 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
-pip install docopt
+conda activate letr
 ```
 
 ### Step3: Data Preparation
