@@ -35,10 +35,14 @@ mkdir -p data
 mkdir -p evaluation/data
 mkdir -p exp
 
-
-conda create -n letr python anaconda
+# Create a new conda environment with Python 3.8
+conda create -n letr python=3.8 anaconda
 conda activate letr
-conda install -c pytorch pytorch torchvision
+
+# Install specific versions of PyTorch, TorchVision, and Torchaudio
+pip install torch==1.8.1 torchvision==0.9.1 torchaudio==0.8.1
+
+# Install other required packages
 conda install cython scipy
 pip install -U 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
 pip install docopt
