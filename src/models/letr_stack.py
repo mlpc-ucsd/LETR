@@ -39,7 +39,7 @@ class LETRstack(nn.Module):
 
         # output layer
         self.class_embed = nn.Linear(hidden_dim, 1 + 1)
-        self.lines_embed = MLP(hidden_dim, hidden_dim, 4, 3)
+        self.lines_embed  =  MLP(hidden_dim, hidden_dim, 6 if args.dataset_name in {'bins', 'mtevents_rgb'} else 4, 3)
 
 
         self.aux_loss=args.aux_loss
@@ -69,7 +69,8 @@ class LETRstack(nn.Module):
         hs2, memory, _ = self.transformer(src2, mask2, hs1[-1], pos[l2_num])
 
         outputs_class = self.class_embed(hs2)
-        outputs_coord = self.lines_embed(hs2).sigmoid()
+        #outputs_coord = self.lines_embed(hs2).sigmoid()
+        outputs_coord = self.lines_embed(hs2) if self.args.dataset_name in {'bins', 'mtevents_rgb'} else self.lines_embed(hs2).sigmoid()
         out = {}
         out["pred_logits"] = outputs_class[-1]
         out["pred_lines"] = outputs_coord[-1]

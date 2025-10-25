@@ -65,7 +65,6 @@ class HungarianMatcher_Line(nn.Module):
 
         # Compute the L1 cost between lines
         cost_line = torch.cdist(out_line, tgt_line, p=1)
-
         # Final cost matrix
         C = self.cost_line * cost_line  + self.cost_class * cost_class
         C = C.view(bs, num_queries, -1).cpu()

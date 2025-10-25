@@ -1,5 +1,12 @@
 # LETR: Line Segment Detection Using Transformers without Edges
 
+## LETR3D
+To evaluate LETR3D model on bin dataset:
+```bash
+python src/bins_eval.py --model model_weights.pth --split test \
+                    --bins_input_width 512 --bins_input_height 384 --bins_path "path/to/dataset.json"
+```
+
 ## Introduction 
 This repository contains the official code and pretrained models for [Line Segment Detection Using Transformers without Edges](https://arxiv.org/abs/2101.01909). [Yifan Xu*](https://yfxu.com/), [Weijian Xu*](https://weijianxu.com/), [David Cheung](https://github.com/sawsa307), and [Zhuowen Tu](https://pages.ucsd.edu/~ztu/). CVPR2021 (**Oral**)
 

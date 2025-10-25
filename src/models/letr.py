@@ -25,7 +25,7 @@ class LETR(nn.Module):
         hidden_dim = transformer.d_model
         self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
 
-        self.lines_embed  =  MLP(hidden_dim, hidden_dim, 4, 3)
+        self.lines_embed  =  MLP(hidden_dim, hidden_dim, 6 if args.dataset_name in {'bins', 'mtevents_rgb'} else 4, 3)
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
 
         channel = [256, 512, 1024, 2048]
@@ -47,7 +47,8 @@ class LETR(nn.Module):
         hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[num])[0]
 
         outputs_class = self.class_embed(hs)
-        outputs_coord = self.lines_embed(hs).sigmoid()
+        #outputs_coord = self.lines_embed(hs)
+        outputs_coord = self.lines_embed(hs) if self.args.dataset_name in {'bins', 'mtevents_rgb'} else self.lines_embed(hs).sigmoid()
         out = {'pred_logits': outputs_class[-1], 'pred_lines': outputs_coord[-1]}
         if self.aux_loss:
             out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
@@ -135,6 +136,7 @@ class SetCriterion(nn.Module):
         return losses
 
     def loss_lines_POST(self, outputs, targets, num_items, origin_indices=None):
+        #print('********* loss_lines_POST **********')
         assert 'POST_pred_lines' in outputs
 
         if outputs['POST_pred_lines'].shape[1] == 1000:
@@ -156,13 +158,22 @@ class SetCriterion(nn.Module):
         return losses
 
     def loss_lines(self, outputs, targets, num_items, origin_indices=None):
+        #print('********* loss_lines **********')
         assert 'pred_lines' in outputs
 
         idx = self._get_src_permutation_idx(origin_indices)
+        #idx = (torch.tensor([0, 0, 0, 0, 1, 1, 1, 1]), torch.tensor([ 0, 1, 2, 3, 4, 5, 6, 7]))
+        #origin_indices = [(torch.tensor([0, 1]), torch.tensor([1, 0])), (torch.tensor([0, 1]), torch.tensor([1, 0]))]
+        #idx = (torch.tensor([0, 0, 1, 1]), torch.tensor([0, 1, 0, 1]))
 
         src_lines = outputs['pred_lines'][idx]
-        target_lines = torch.cat([t['lines'][i] for t, (_, i) in zip(targets, origin_indices)], dim=0)
 
+        target_lines = torch.cat([t['lines'][i] for t, (_, i) in zip(targets, origin_indices)], dim=0)
+        #print('origin_indices', origin_indices)
+        #print('idx', idx)
+        #print('src_lines', src_lines)
+        #print('target_lines', target_lines)
+        #exit()
         loss_line = F.l1_loss(src_lines, target_lines, reduction='none')
 
         losses = {}
@@ -183,7 +194,7 @@ class SetCriterion(nn.Module):
         return batch_idx, tgt_idx
 
     def get_loss(self, loss, outputs, targets, num_items, **kwargs):
-        
+        #print('******* get_loss ************')
         loss_map = {
             'POST_lines_labels': self.loss_lines_labels,
             'POST_lines': self.loss_lines,
@@ -201,25 +212,23 @@ class SetCriterion(nn.Module):
              targets: list of dicts, such that len(targets) == batch_size.
                       The expected keys in each dict depends on the losses applied, see each loss' doc
         """
+        
+        #print('in loss forward')
+        
         outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
 
-        
         origin_indices = self.matcher(outputs_without_aux, targets)
 
-
         num_items = sum(len(t["labels"]) for t in targets)
-
         num_items = torch.as_tensor([num_items], dtype=torch.float, device=next(iter(outputs.values())).device)
         if is_dist_avail_and_initialized():
             torch.distributed.all_reduce(num_items)
         num_items = torch.clamp(num_items / get_world_size(), min=1).item()
-
         # Compute all the requested losses
         losses = {}
         for loss in self.losses:
             losses.update(self.get_loss(loss, outputs, targets,  num_items, origin_indices=origin_indices))
             
-
         # In case of auxiliary losses, we repeat this process with the output of each intermediate layer.
         aux_name = 'aux_outputs'
         if aux_name in outputs:

@@ -14,6 +14,27 @@ import numpy as np
 import torch
 import datetime
 import util.misc as utils
+import torch.nn.functional as F
+from pathlib import Path
+from util.save_prediction import save_prediction_data, save_prediction_visualization
+
+saved_figs = 0
+def save_prediction(args, epoch, entry, samples, outputs, targets, save_prob, save_data, save_png, subdir):
+    global saved_figs
+    if save_prob > 0.0 and np.random.rand() < save_prob:
+        #subdir = 'visualizations'
+        Path(os.path.join(args.output_dir, subdir)).mkdir(parents=True, exist_ok=True)
+        index = np.random.randint(len(outputs))
+        if save_png:
+            path = os.path.join(args.output_dir, subdir, 'vis-e' + str(epoch).rjust(len(str(args.epochs)), '0') + f'-f{saved_figs:03}.png')
+            print('Saving prediction visualization to', path)
+            save_prediction_visualization(samples, outputs, path, entry)
+        if save_data:
+            path = os.path.join(args.output_dir, subdir, 'vis-e' + str(epoch).rjust(len(str(args.epochs)), '0') + f'-f{saved_figs:03}.json')
+            print('Saving prediction data to', path)
+            save_prediction_data(samples, outputs, targets, entry, path)
+        saved_figs += 1
+
 
 def train_one_epoch(model, criterion, postprocessors, data_loader, optimizer, device, epoch, max_norm, args):
     model.train()
@@ -23,23 +44,38 @@ def train_one_epoch(model, criterion, postprocessors, data_loader, optimizer, de
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 10
 
-
     counter = 0
     torch.cuda.empty_cache()
-    for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+    for samples, targets, entry in metric_logger.log_every(data_loader, print_freq, header):
         samples = samples.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-        
+        targets = [{k: (v.to(device) if k != 'exr_file' else v) for k, v in t.items()} for t in targets]
+
         try:
             if args.LETRpost:
                 outputs, origin_indices = model(samples, postprocessors, targets, criterion)
+                save_prediction(args, epoch, entry, samples, outputs, targets,
+                                save_prob=args.save_prediction_probability,
+                                save_data=args.save_prediction_data,
+                                save_png=args.save_prediction_visualization,
+                                subdir='visualizations_train')
                 loss_dict = criterion(outputs, targets, origin_indices)
             else:
                 outputs = model(samples)
+                save_prediction(args, epoch, entry, samples, outputs, targets,
+                                save_prob=args.save_prediction_probability,
+                                save_data=args.save_prediction_data,
+                                save_png=args.save_prediction_visualization,
+                                subdir='visualizations_train')
                 loss_dict = criterion(outputs, targets)
+
+                #print('outputs:', outputs)
+                #print('targets:', targets)
+                #print('pred_lines:', outputs['pred_lines'])
+                #print('target_lines:', [t['lines'] for t in targets])
+
         except RuntimeError as e:
             if "out of memory" in str(e):
-                sys.exit('Out Of Memory')   
+                sys.exit('Out Of Memory')
             else:
                 raise e
             
@@ -74,29 +110,39 @@ def train_one_epoch(model, criterion, postprocessors, data_loader, optimizer, de
 
 
 @torch.no_grad()
-def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, output_dir, args):
+def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, output_dir, args, epoch):
     model.eval()
     criterion.eval()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
 
-    id_to_img = {}
-    f = open(os.path.join(args.coco_path, "annotations", "lines_{}2017.json".format(args.dataset)))
-    data = json.load(f)
-    for d in data['images']:
-        id_to_img[d['id']] = d['file_name'].split('.')[0]
+    #id_to_img = {}
+    #f = open(os.path.join(args.coco_path, "annotations", "lines_{}2017.json".format(args.dataset)))
+    #data = json.load(f)
+    #for d in data['images']:
+    #    id_to_img[d['id']] = d['file_name'].split('.')[0]
     counter = 0
     num_images = 0
-    for samples, targets in metric_logger.log_every(data_loader, 10, header):
+    for samples, targets, entry in metric_logger.log_every(data_loader, 10, header):
         samples = samples.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        targets = [{k: (v.to(device) if k != 'exr_file' else v) for k, v in t.items()} for t in targets]
 
         if args.LETRpost:
             outputs, origin_indices = model(samples, postprocessors, targets, criterion)
+            save_prediction(args, epoch, entry, samples, outputs, targets,
+                                save_prob=args.save_test_prediction_probability,
+                                save_data=args.save_test_prediction_data,
+                                save_png=args.save_test_prediction_visualization,
+                                subdir='visualizations_test')
             loss_dict = criterion(outputs, targets, origin_indices)
         else:
             outputs = model(samples)
+            save_prediction(args, epoch, entry, samples, outputs, targets,
+                                save_prob=args.save_test_prediction_probability,
+                                save_data=args.save_test_prediction_data,
+                                save_png=args.save_test_prediction_visualization,
+                                subdir='visualizations_test')
             loss_dict = criterion(outputs, targets)
 
         weight_dict = criterion.weight_dict
@@ -145,13 +191,13 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
                 os.makedirs(args.output_dir+append_path , exist_ok=True)
                 checkpoint_path = args.output_dir+append_path+'/{}.npz'
                 curr_img_id = targets[0]['image_id'].tolist()[0]
-                np.savez(checkpoint_path.format(id_to_img[curr_img_id]),**{'lines': line, 'score':score})
+                #np.savez(checkpoint_path.format(id_to_img[curr_img_id]),**{'lines': line, 'score':score})
             elif 'data/wireframe_processed' in args.coco_path:
                 append_path = '/benchmark/benchmark_val_'+args.append_word
                 os.makedirs(args.output_dir+append_path , exist_ok=True)
                 checkpoint_path = args.output_dir+append_path+'/{:08d}.npz'
                 curr_img_id = targets[0]['image_id'].tolist()[0]
-                np.savez(checkpoint_path.format(int(id_to_img[curr_img_id])),**{'lines': line, 'score':score})
+                #np.savez(checkpoint_path.format(int(id_to_img[curr_img_id])),**{'lines': line, 'score':score})
             else:
                 assert False
         num_images +=1

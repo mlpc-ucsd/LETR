@@ -30,6 +30,10 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 class ConvertCocoPolysToMask(object):
 
     def __call__(self, image, target, args):
+        
+        print('********** preparing ****************')
+        print('target:',target)
+        
         w, h = image.size
 
         image_id = target["image_id"]
@@ -38,6 +42,8 @@ class ConvertCocoPolysToMask(object):
         anno = target["annotations"]
 
         anno = [obj for obj in anno]
+        
+        #print(anno)
  
         lines = [obj["line"] for obj in anno]
         lines = torch.as_tensor(lines, dtype=torch.float32).reshape(-1, 4)

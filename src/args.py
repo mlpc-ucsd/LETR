@@ -5,6 +5,9 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
+    parser.add_argument('--optimizer', default='AdamW', type=str, choices=('AdamW', 'SGD'))
+    parser.add_argument('--sgd_momentum', default=0.9, type=float)
+    parser.add_argument('--sgd_weight_decay', default=0.0005, type=float)
     parser.add_argument('--batch_size', default=2, type=int)
     parser.add_argument('--weight_decay', default=1e-4, type=float)
     parser.add_argument('--epochs', default=300, type=int)
@@ -16,6 +19,15 @@ def get_args_parser():
     parser.add_argument('--benchmark', action='store_true',
                         help="Train segmentation head if the flag is provided")
     parser.add_argument('--append_word', default=None, type=str, help="Name of the convolutional backbone to use")
+
+    parser.add_argument('--save_prediction_probability', default=0.0, type=float)
+    parser.add_argument('--save_prediction_visualization', action='store_true', default=False)
+    parser.add_argument('--save_prediction_data', action='store_true', default=False)
+
+    parser.add_argument('--save_test_prediction_probability', default=0.0, type=float)
+    parser.add_argument('--save_test_prediction_visualization', action='store_true', default=False)
+    parser.add_argument('--save_test_prediction_data', action='store_true', default=False)
+
     # Model parameters
     # * Backbone
     parser.add_argument('--backbone', default='resnet50', type=str,
@@ -90,12 +102,36 @@ def get_args_parser():
     parser.add_argument('--label_loss_params', default='{}', type=str)
 
     # dataset parameters
-    parser.add_argument('--dataset_file', default='coco')
+    parser.add_argument('--dataset_name', default='coco')
     parser.add_argument('--coco_path', type=str)
     parser.add_argument('--coco_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
-    parser.add_argument('--output_dir', default='',
+    # bins dataset options
+    parser.add_argument('--bins_input_width', type=int, default=256, help='size of input')
+    parser.add_argument('--bins_input_height', type=int, default=256, help='size of input')
+    parser.add_argument('--bins_noise_sigma', type=float, default=None)
+    parser.add_argument('--bins_t_sigma', type=float, default=0.0)
+    parser.add_argument('--bins_random_rot', action='store_true', default=False)
+    parser.add_argument('--bins_cutout_prob', type=float, default=0.0)
+    parser.add_argument('--bins_cutout_max_size', type=float, default=0.8)
+    parser.add_argument('--bins_cutout_min_size', type=float, default=0.2)
+    parser.add_argument('--bins_cutout_inside', action='store_true', default=False)
+    parser.add_argument('--bins_no_preload', action='store_true', default=False)
+    parser.add_argument('--bins_path', type=str, default=None)
+    parser.add_argument('--bins_pick_samples', default='all', type=str, choices=('all', 'synthetic', 'real'))
+    parser.add_argument('--bins_subsample_batch', type=float, default=1.0)
+
+    # mtevents_rgb dataset options
+    parser.add_argument('--mtevents_rgb_dataset_json_path', type=str, default=None)
+    parser.add_argument('--mtevents_rgb_input_width', type=int, default=256, help='size of input')
+    parser.add_argument('--mtevents_rgb_input_height', type=int, default=256, help='size of input')
+    parser.add_argument('--mtevents_rgb_no_preload', action='store_true', default=False)
+    parser.add_argument('--mtevents_rgb_subsample_batch', type=float, default=1.0)
+
+    parser.add_argument('--output_dir_prefix', default='',
+                        help='path to prepend to output dir')
+    parser.add_argument('--output_dir', default='<auto>',
                         help='path where to save, empty for no saving')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
